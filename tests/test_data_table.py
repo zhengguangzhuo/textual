@@ -413,6 +413,29 @@ async def test_clear():
         assert len(table.columns) == 0
 
 
+async def test_reloaded_rows_render_at_measured_column_width() -> None:
+    """回归测试：https://github.com/Textualize/textual/issues/6740
+
+    重载后若在空闲更新前发生渲染，后续绘制仍应使用重新测得的列宽。
+    """
+    app = DataTableApp()
+    async with app.run_test(size=(80, 10)) as pilot:
+        table = app.query_one(DataTable)
+
+        def load() -> None:
+            table.clear(columns=True)
+            table.add_column("name")
+            table.add_row("a much longer name")
+
+        load()
+        await pilot.pause()
+        load()
+        table.render_line(1)
+        await pilot.pause()
+
+        assert table.render_line(1).text.rstrip() == " a much longer name"
+
+
 async def test_column_labels() -> None:
     app = DataTableApp()
     async with app.run_test():

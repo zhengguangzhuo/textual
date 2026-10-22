@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Fixed
 
+- Fixed `DataTable` rows remaining clipped at the header width after reloading data. https://github.com/Textualize/textual/issues/6740
 - Fixed parsing Kitty extended keys with multiple codepoints https://github.com/Textualize/textual/pull/6592
 - Fixed crash when clicking in the Screen's padding https://github.com/Textualize/textual/pull/6598
 

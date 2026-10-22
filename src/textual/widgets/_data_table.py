@@ -1416,6 +1416,7 @@ class DataTable(ScrollView, Generic[CellType], can_focus=True):
         """
         console = self.app.console
         auto_height_rows: list[tuple[int, Row, list[RenderableType]]] = []
+        column_width_changed = False
         for row_key in new_rows:
             row_index = self._row_locations.get(row_key)
 
@@ -1432,16 +1433,26 @@ class DataTable(ScrollView, Generic[CellType], can_focus=True):
 
             row_label, cells_in_row = self._get_row_renderables(row_index)
             label_content_width = measure(console, row_label, 1) if row_label else 0
-            self._label_column.content_width = max(
+            new_label_content_width = max(
                 self._label_column.content_width, label_content_width
             )
+            if new_label_content_width != self._label_column.content_width:
+                column_width_changed = True
+                self._label_column.content_width = new_label_content_width
 
             for column, renderable in zip(self.ordered_columns, cells_in_row):
                 content_width = measure(console, renderable, 1)
-                column.content_width = max(column.content_width, content_width)
+                new_content_width = max(column.content_width, content_width)
+                if new_content_width != column.content_width:
+                    column_width_changed = True
+                    column.content_width = new_content_width
 
             if row.auto_height:
                 auto_height_rows.append((row_index, row, cells_in_row))
+
+        if column_width_changed:
+            # 空闲更新测得新内容宽度前，渲染可能已按旧宽度缓存单元格。
+            self._clear_caches()
 
         # If there are rows that need to have their height computed, render them correctly
         # so that we can cache this rendering for later.
@@ -1513,6 +1524,8 @@ class DataTable(ScrollView, Generic[CellType], can_focus=True):
             total_width,
             self._total_row_height + header_height,
         )
+        if column_width_changed:
+            self.refresh()
 
     def _get_cell_region(self, coordinate: Coordinate) -> Region:
         """Get the region of the cell at the given spatial coordinate."""
